@@ -1,5 +1,27 @@
 #################################################################
 #                                                               #
+#      README file for modified evalb                           #
+#                                                               #
+# This is an updated version of evalb, for use with modern C    #
+# compilers. There are a few updates, each marked in the code:  #
+#                                                               #
+# /* DJB: explanation of comment */                             #
+#                                                               #
+# The updates are purely to help compilation with recent        #
+# versions of GCC (and other C compilers). There are *NO* other #
+# changes to the algorithm itself.                              #
+#                                                               #
+# I have made these changes following recommendations from      #
+# users of the Corpora Mailing List, especially Peet Morris and #
+# Ramon Ziai.                                                   #
+#                                                               #
+#                                     David Brooks (Birmingham) #
+#                                                               #
+#                                     September.2005            #
+#################################################################
+
+#################################################################
+#                                                               #
 #      README file for evalb                                    #
 #                                                               #
 #                                         Satoshi Sekine (NYU)  #

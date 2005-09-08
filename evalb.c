@@ -237,7 +237,10 @@ int EQ_word_n = 0;
 /************************/
 /* Function return-type */
 /************************/
-void main();
+
+/* DJB: Return type changed from void to int */
+/* replaces: void main(); */
+int main();
 void init_global();
 void print_head();
 void init();
@@ -266,11 +269,16 @@ void Error();
 void Fatal();
 void Usage();
 
-int fprintf();
-int printf();
+/* DJB: Removed unnecessary declarations */
+/* removed: int fprintf(); */
+/* removed: int printf(); */
 int atoi();
 int fclose();
-int sscanf();
+/* DJB: Removed unnecessary declarations */
+/* removed: int sscanf(); */
+/* DJB: Added a declaration for the exit() method */
+/* added: void exit(); */
+void exit();
 
 /***********/
 /* program */
@@ -279,7 +287,9 @@ int sscanf();
 			 fprintf(stderr,"Missing argument: %s\n",st); \
 		      }
 
-void
+/* DJB: Changed return type for method main from void to int */
+/* replaced: void with int */
+int
 main(argc,argv)
 int argc;
 char *argv[];
@@ -375,6 +385,10 @@ char *argv[];
     }
 
     print_total();
+
+    /* DJB: Return a default int value, compatible with return type */
+    /* added: return 0; */
+    return 0;
 }
 
 
