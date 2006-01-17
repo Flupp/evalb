@@ -1,6 +1,52 @@
 #################################################################
 #                                                               #
-#      README file for modified evalb                           #
+#      Bug fix and additional functionality for evalb           #
+#                                                               #
+# This updated version of evalb fixes a bug in which sentences  #
+# were incorrectly categorized as "length mismatch" when the    #
+# the parse output had certain mislabeled parts-of-speech.      #
+#                                                               #
+# The bug was the result of evalb treating one of the tags (in  #
+# gold or test) as a label to be deleted (see sections [6],[7]  #
+# for details), but not the corresponding tag in the other.     #
+# This most often occurs with punctuation. See the subdir       #
+# "bug" for an example gld and tst file demonstating the bug,   #
+# as well as output of evalb with and without the bug fix.      #
+#                                                               #
+# For the present version in case of length mismatch, the nodes #
+# causing the imbalance are reinserted to resolve the miscount. #
+# If the lengths of gold and test truly differ, the error is    #
+# still reported. The parameter file "new.prm" (derived from    #
+# COLLINS.prm) shows how to add new potential mislabelings for  #
+# quotes (",``,',`).                                            #
+#                                                               #
+# I have preserved DJB's revision for modern compilers except   #
+# for the delcaration of "exit" which is provided by stdlib.    #
+#                                                               #
+# Other changes:                                                #
+#                                                               #
+# * output of F-Measure in addition to precision and recall     #
+#   (I did not update the documention in section [4] for this)  #
+#                                                               #
+# * more comprehensive DEBUG output that includes bracketing    #
+#   information as evalb is processing each sentence            #
+#   (useful in working through this, and peraps other bugs).    #
+#   Use either the "-D" run-time switch or set DEBUG to 2 in    #
+#   the parameter file.                                         #
+#                                                               #
+# * added DELETE_LABEL lines in new.prm for S1 nodes produced   #
+#   by the Charniak parser and "?", "!" punctuation produced by #
+#   the Bikel parser.                                           #
+#                                                               #
+#                                                               #
+#                                           David Ellis (Brown) #
+#                                                               #
+#                                           January.2006        #
+#################################################################
+
+#################################################################
+#                                                               #
+#      Update of evalb for modern compilers                     #
 #                                                               #
 # This is an updated version of evalb, for use with modern C    #
 # compilers. There are a few updates, each marked in the code:  #
