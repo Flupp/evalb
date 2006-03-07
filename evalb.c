@@ -85,6 +85,9 @@ typedef struct ss_terminal {
 typedef struct ss_term_ind {
 	s_terminal term;
 	int index;
+   int bracket;
+   int endslen;
+   int ends[MAX_BRACKET_IN_SENT];
 } s_term_ind;
 
 typedef struct ss_bracket {
@@ -468,10 +471,12 @@ init()
       quotterm1[i].term.label[0] = '\0';
       quotterm1[i].term.result   = 9;
       quotterm1[i].index         = -1;
+      quotterm1[i].bracket       = -1;
       quotterm2[i].term.word[0]  = '\0';
       quotterm2[i].term.label[0] = '\0';
       quotterm2[i].term.result   = 9;
       quotterm2[i].index         = -1;
+      quotterm2[i].bracket       = -1;
   }
 
   for(i=0;i<MAX_BRACKET_IN_SENT;i++){
@@ -686,12 +691,17 @@ int *bn;
 		if(*q==')' && !is_deletelabel_for_length(label)==1){
 		    len++;
 		}
-
+      if (DEBUG>1)
+         printf("label=%s, word=%s, wid=%d\n",label,word,wid);
 		/* quote terminal */
 		if(*q==')' && is_quote_term(label,word)==1){
 			strcpy(quotterm[qt].term.word,word);
 			strcpy(quotterm[qt].term.label,label);
 			quotterm[qt].index = wid;
+         quotterm[qt].bracket = bid;
+         quotterm[qt].endslen = stack_top;
+         //quotterm[qt].ends = (int*)malloc(stack_top*sizeof(int));
+         memcpy(quotterm[qt].ends,stack,stack_top*sizeof(int));
 			qt++;
 		}
 		
@@ -816,7 +826,9 @@ calc_result(unsigned char *buf1,unsigned char *buf)
 	return;
     }
 
-    if(wn1 != wn2){
+   if(wn1 != wn2){
+      //if (DEBUG>1)
+    //Error("Length unmatch (%d|%d)\n",wn1,wn2);
 	fix_quote();
 	if(wn1 != wn2){
 		Error("Length unmatch (%d|%d)\n",wn1,wn2);
@@ -843,6 +855,9 @@ calc_result(unsigned char *buf1,unsigned char *buf)
     match = 0;
     for(i=0;i<bn1;i++){
       for(j=0;j<bn2;j++){
+
+         if (DEBUG>1)
+   printf("1.res=%d, 2.res=%d, 1.start=%d, 2.start=%d, 1.end=%d, 2.end=%d\n",bracket1[i].result,bracket2[j].result,bracket1[i].start,bracket2[j].start,bracket1[i].end,bracket2[j].end);
 
 	// does bracket match?
 	if(bracket1[i].result != 5 && 
@@ -947,12 +962,12 @@ calc_result(unsigned char *buf1,unsigned char *buf)
     /*------------------*/
     correct_tag=0;
     for(i=0;i<wn1;i++){
-	if(label_comp(terminal1[i].label,terminal2[i].label)==1){
-	    terminal1[i].result = terminal2[i].result = 1;
-	    correct_tag++;
-	} else {
-	    terminal1[i].result = terminal2[i].result = 0;
-	}
+       if(label_comp(terminal1[i].label,terminal2[i].label)==1){
+          terminal1[i].result = terminal2[i].result = 1;
+          correct_tag++;
+       } else {
+          terminal1[i].result = terminal2[i].result = 0;
+       }
     }
 
     individual_result(wn1,r_bn1,r_bn2,match,crossing,correct_tag);
@@ -961,67 +976,97 @@ calc_result(unsigned char *buf1,unsigned char *buf)
 void
 fix_quote()
 {
-	int i,j,k;
-	if (DEBUG>1) {
-		for(i=0;i<MAX_QUOTE_TERM;i++){
-			if (quotterm1[i].index!=-1)
-				printf("%d: %s - %s\n",quotterm1[i].index,
-					   quotterm1[i].term.label,
-					   quotterm1[i].term.word);
-			if (quotterm2[i].index!=-1)
-				printf("%d: %s - %s\n",quotterm2[i].index,
-					   quotterm2[i].term.label,
-					   quotterm2[i].term.word);
-		}
-	}
-	if (wn1<wn2) {
-		for(i=0;i<MAX_QUOTE_TERM;i++) {
-			int ind = quotterm2[i].index;
-			if (ind!=-1) {
-				for(j=0;j<MAX_QUOTE_TERM;j++){
-					if (quotterm1[j].index==ind &&
-					    strcmp(quotterm1[j].term.label,
-						   quotterm2[i].term.label)!=0) {
-						if (is_deletelabel(quotterm1[j].term.label) && !is_deletelabel(quotterm2[i].term.label)) {
-							reinsert_term(&quotterm1[j],ind,terminal1,bracket1);
-							for (k=j;k<MAX_QUOTE_TERM;k++)
-								if (quotterm1[k].index!=-1)
-									quotterm1[k].index++;
-						} else if (is_deletelabel(quotterm2[i].term.label) && !is_deletelabel(quotterm1[j].term.label)) {
-							reinsert_term(&quotterm2[i],ind,terminal2,bracket2);
-							for (k=i;k<MAX_QUOTE_TERM;k++)
-								if (quotterm2[k].index!=-1)
-									quotterm2[k].index++;
-						}
-					}
-				}
-			} else break;
-		}
-	}
+   int i,j,k;
+   if (DEBUG>1) {
+      for(i=0;i<MAX_QUOTE_TERM;i++){
+         if (quotterm1[i].index!=-1)
+            printf("%d: %s - %s\n",quotterm1[i].index,
+                  quotterm1[i].term.label,
+                  quotterm1[i].term.word);
+         if (quotterm2[i].index!=-1)
+            printf("%d: %s - %s\n",quotterm2[i].index,
+                  quotterm2[i].term.label,
+                  quotterm2[i].term.word);
+      }
+   }
+   for(i=0;i<MAX_QUOTE_TERM;i++) {
+      int ind = quotterm2[i].index;
+      if (ind!=-1) {
+         for(j=0;j<MAX_QUOTE_TERM;j++){
+            if (quotterm1[j].index==ind &&
+                  strcmp(quotterm1[j].term.label,
+                     quotterm2[i].term.label)!=0) {
+               if (is_deletelabel(quotterm1[j].term.label) && !is_deletelabel(quotterm2[i].term.label)) {
+                  reinsert_term(&quotterm1[j],terminal1,bracket1,&wn1);
+                  for (k=j;k<MAX_QUOTE_TERM;k++)
+                     if (quotterm1[k].index!=-1)
+                        quotterm1[k].index++;
+               } else if (is_deletelabel(quotterm2[i].term.label) && !is_deletelabel(quotterm1[j].term.label)) {
+                  reinsert_term(&quotterm2[i],terminal2,bracket2,&wn2);
+                  for (k=i;k<MAX_QUOTE_TERM;k++)
+                     if (quotterm2[k].index!=-1)
+                        quotterm2[k].index++;
+               }
+            }
+         }
+      } else break;
+   }
 }
 
 void
-reinsert_term(term,ind,terminal,bracket)
-s_terminal* term;
-int ind;
+reinsert_term(quot,terminal,bracket,wn)
+s_term_ind* quot;
 s_terminal terminal[];
 s_bracket bracket[];
+int* wn;
 {
-	int k;
-	memmove(&terminal[ind+1],
-		&terminal[ind],
-		sizeof(s_terminal)*(MAX_WORD_IN_SENT-ind-1));
-	strcpy(terminal[ind].label,term->label);
-	strcpy(terminal[ind].word,term->word);
-	wn1++;
-	for(k=0;k<MAX_BRACKET_IN_SENT;k++) {
-		if (bracket[k].start>=ind)
-			bracket[k].start++;
-		if (bracket[k].end>=ind)
-			bracket[k].end++;
-	}
+   int ind = quot->index;
+   int bra = quot->bracket;
+   s_terminal* term = &quot->term;
+   int k;
+   memmove(&terminal[ind+1],
+         &terminal[ind],
+         sizeof(s_terminal)*(MAX_WORD_IN_SENT-ind-1));
+   strcpy(terminal[ind].label,term->label);
+   strcpy(terminal[ind].word,term->word);
+   (*wn)++;
+   if (DEBUG>1)
+      printf("bra=%d, ind=%d\n",bra,ind);
+   for(k=0;k<MAX_BRACKET_IN_SENT;k++) {
+      if (bracket[k].start==-1)
+         break;
+      if (DEBUG>1)
+         printf("bracket[%d]={%d,%d}\n",k,bracket[k].start,bracket[k].end);
+      if (k>=bra) {
+         bracket[k].start++;
+         bracket[k].end++;
+      }
+      //if (bracket[k].start<=ind && bracket[k].end>=ind)
+         //bracket[k].end++;
+   }
+   if (DEBUG>1)
+      printf("endslen=%d\n",quot->endslen);
+   for(k=0;k<quot->endslen;k++) {
+      //printf("ends[%d]=%d",k,quot->ends[k]);
+      bracket[quot->ends[k]].end++;
+   }
+   //free(quot->ends);
 }
-
+/*
+void
+adjust_end(ind,bra)
+int ind;
+int bra;
+{
+    for(k=0;k<MAX_BRACKET_IN_SENT;k++) {
+      if (bracket[k].start==-1)
+         break;
+      printf("bracket[%d]={%d,%d}\n",k,bracket[k].start,bracket[k].end);
+      if (k>=bra)
+         bracket[k].end++;
+   }
+}
+*/
 void
 massage_data()
 {
