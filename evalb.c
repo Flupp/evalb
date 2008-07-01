@@ -14,6 +14,8 @@
 /*                                         Mike Collins (UPenn)  */
 /*                                                               */
 /*                                         October.1997          */
+/*                                                               */
+/* Please refer README for the update information                */
 /*****************************************************************/
 
 #include <stdio.h>
@@ -1247,7 +1249,7 @@ print_total()
 	       TOTAL_match, 
 	       TOTAL_bn1, 
 	       TOTAL_bn2,
-	       TOTAL_no_crossing);
+	       TOTAL_crossing);
     }
 
     printf("  %5d %5d   %6.2f",
